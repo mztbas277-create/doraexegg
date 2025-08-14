@@ -10,69 +10,73 @@ const config = {
   cooldown: 5,
 };
 
-async function onCall({ message, args}) {
-  const { threadID} = message;
+async function onCall({ api, event, args}) {
+  const { threadID, messageID, senderID} = event;
   const command = args[0]?.toLowerCase();
   const target = args.slice(1).join(" ").trim();
 
   const root = process.cwd();
 
-  // 🔒 دالة لحماية المسار داخل الجذر فقط
+  // 🔒 حماية المسار داخل الجذر فقط
   function safePath(p = "") {
     const resolved = resolve(root, p);
     if (!resolved.startsWith(root)) throw new Error("📛 مسار غير آمن خارج الجذر.");
     return resolved;
 }
 
+  function reply(msg) {
+    return api.sendMessage(msg, threadID, messageID);
+}
+
   try {
     switch (command) {
       case "ls": {
         const dirPath = target? safePath(target): root;
-        if (!existsSync(dirPath)) return message.reply("📁 المسار غير موجود.");
-        if (!statSync(dirPath).isDirectory()) return message.reply("❌ هذا ليس مجلد.");
+        if (!existsSync(dirPath)) return reply("📁 المسار غير موجود.");
+        if (!statSync(dirPath).isDirectory()) return reply("❌ هذا ليس مجلد.");
 
         const contents = readdirSync(dirPath);
-        if (contents.length === 0) return message.reply("📂 المجلد فارغ.");
-        return message.reply(`📦 محتويات ${basename(dirPath)}:\n• ${contents.join("\n• ")}`);
+        if (contents.length === 0) return reply("📂 المجلد فارغ.");
+        return reply(`📦 محتويات ${basename(dirPath)}:\n• ${contents.join("\n• ")}`);
 }
 
       case "cd": {
         const checkPath = safePath(target);
         if (!existsSync(checkPath) ||!statSync(checkPath).isDirectory()) {
-          return message.reply("❌ المسار غير موجود أو ليس مجلد.");
+          return reply("❌ المسار غير موجود أو ليس مجلد.");
 }
-        return message.reply(`📌 المسار صالح: ${checkPath}`);
+        return reply(`📌 المسار صالح: ${checkPath}`);
 }
 
       case "del": {
         const file = safePath(target);
-        if (!existsSync(file)) return message.reply("🗑️ الملف غير موجود.");
+        if (!existsSync(file)) return reply("🗑️ الملف غير موجود.");
         if (statSync(file).isDirectory()) {
-          return message.reply("🚫 لا يمكن حذف مجلد بهذه الطريقة.");
+          return reply("🚫 لا يمكن حذف مجلد بهذه الطريقة.");
 }
         unlinkSync(file);
-        return message.reply(`✅ تم حذف الملف: ${basename(file)}`);
+        return reply(`✅ تم حذف الملف: ${basename(file)}`);
 }
 
       case "get": {
         const file = safePath(target);
         if (!existsSync(file) || statSync(file).isDirectory()) {
-          return message.reply("📄 الملف غير موجود أو المسار يشير إلى مجلد.");
+          return reply("📄 الملف غير موجود أو المسار يشير إلى مجلد.");
 }
         const content = readFileSync(file, "utf8").slice(0, 1500);
-        return message.reply(`📄 محتوى ${basename(file)}:\n${content}`);
+        return reply(`📄 محتوى ${basename(file)}:\n${content}`);
 }
 
       case "cer": {
-        return message.reply(`🧠 بيئة التشغيل:\n• Node: ${process.version}\n• Platform: ${process.platform}\n• RAM Used: ${(process.memoryUsage().heapUsed / 1024 / 1024).toFixed(2)} MB`);
+        return reply(`🧠 بيئة التشغيل:\n• Node: ${process.version}\n• Platform: ${process.platform}\n• RAM Used: ${(process.memoryUsage().heapUsed / 1024 / 1024).toFixed(2)} MB`);
 }
 
       default:
-        return message.reply("🌀 الأمر غير معروف. استخدم: ls, cd, del, get, cer");
+        return reply("🌀 الأمر غير معروف. استخدم: ls, cd, del, get, cer");
 }
 } catch (err) {
     console.error("❌ خطأ في تنفيذ الأمر:", err);
-    return message.reply("⚠️ حدث خلل أثناء تنفيذ العملية.");
+    return reply("⚠️ حدث خلل أثناء تنفيذ العملية.");
 }
 }
 
