@@ -1,13 +1,35 @@
+import axios from 'axios';
 import Canvas from 'canvas';
-import { writeFileSync } from 'fs';
-import { join } from 'path';
+import { writeFileSync} from 'fs';
+import { join} from 'path';
 
 const config = {
-    name:'رانك', 
-    description: 'Get your global/local rank',
-    usage: "[-g/-l] [@mention/reply]",
+    name: 'رانك',
+    description: 'عرض بطاقة التفاعل الخاصة بك',
+    usage: "[@رد/منشن]",
     credits: "XaviaTeam",
     cooldown: 10
+};
+
+const langData = {
+    "ar_SY": {
+        "rank_error": "حدث خطأ أثناء إنشاء البطاقة."
+}
+};
+
+async function getAvatarUrl(userID) {
+    if (isNaN(userID)) throw new Error(`❌ userID غير صالح: ${userID}`);
+    try {
+        const user = await axios.post(`https://www.facebook.com/api/graphql/`, null, {
+            params: {
+                doc_id: "5341536295888250",
+                variables: JSON.stringify({ height: 500, scale: 1, userID, width: 500})
+}
+});
+        return user.data.data.profile.profile_picture.uri;
+} catch {
+        return "https://i.ibb.co/bBSpr5v/143086968-2856368904622192-1959732218791162458-n.png";
+}
 }
 
 function progressBar(ctx, x, y, width, radius, progress) {
@@ -25,8 +47,8 @@ function progressBar(ctx, x, y, width, radius, progress) {
     ctx.closePath();
     ctx.fill();
 
-    // draw the progress
     if (progress === 0) return;
+
     ctx.fillStyle = '#ffffff';
     ctx.beginPath();
     ctx.moveTo(x + radius, y);
@@ -43,7 +65,7 @@ function progressBar(ctx, x, y, width, radius, progress) {
 }
 
 async function makeCard(data) {
-    const { savePath, avatarPath, name, rank, exp, level, expToNextLevel } = data;
+    const { savePath, avatarPath, name, rank, exp, level, expToNextLevel} = data;
     try {
         const template = await Canvas.loadImage(join(global.assetsPath, 'rank_card.png'));
         const avatar = await Canvas.loadImage(avatarPath);
@@ -60,100 +82,53 @@ async function makeCard(data) {
         ctx.fillText(name, 136, 43);
 
         ctx.font = 'bold 15px sans-serif';
-        ctx.fillStyle = '#ffffff';
         ctx.fillText(`Rank ${rank}`, 136, 66);
 
         ctx.font = 'bold 13px sans-serif';
-        ctx.fillStyle = '#ffffff';
         ctx.fillText(`Lv.${level}`, 136, 87);
 
         ctx.font = 'bold 12px sans-serif';
-        ctx.fillStyle = '#ffffff';
         ctx.fillText(`${exp}/${expToNextLevel}`, 270, 87);
 
         let percent = (exp / expToNextLevel) * 100;
-        percent = percent > 0 ? percent % 5 === 0 ? percent : Math.round(percent / 5) * 5 : 0;
+        percent = percent> 0? percent % 5 === 0? percent: Math.round(percent / 5) * 5: 0;
 
         progressBar(ctx, 134, 98, 230, 7, percent);
 
         const buffer = canvas.toBuffer('image/png');
         writeFileSync(savePath, buffer);
         return true;
-    } catch (e) {
+} catch (e) {
         console.error(e);
         return false;
-    }
+}
 }
 
-const langData = {
-    "en_US": {
-        "rank_all_local": "--- Leaderboard ---\n👤 Your exp: {senderExp} #{senderRank}\n📕 Members:\n{allData}",
-        "rank_all_global": "--- Leaderboard ---\n👤 Your exp: {senderExp} #{senderRank}\n📕 Global Top 20:\n{allData}",
-    },
-    "vi_VN": {
-        "rank_all_local": "-- Xếp hạng tương tác --\n👤 Exp của bạn: {senderExp} #{senderRank}\n📕 Thành viên:\n{allData}",
-        "rank_all_global": "-- Xếp hạng tương tác --\n👤 Exp của bạn: {senderExp} #{senderRank}\n📕 Top 20 global:\n{allData}",
-    },
-    "ar_SY": {
-        "rank_all_local": "-- تقييم التفاعل --\n👤 المستوى الخاص بك: {senderExp} #{senderRank}\n📕 أعضاء:\n{allData}",
-        "rank_all_global": "-- تقييم التفاعل --\n👤 المستوى الخاص بك: {senderExp} #{senderRank}\n📕 افضل 20 متفاعلا:\n{allData}",
-    }
-}
-
-async function onCall({ message, args, getLang }) {
-    const { type, messageReply, mentions, senderID, threadID, participantIDs } = message;
+async function onCall({ message, getLang}) {
+    const { type, messageReply, mentions, senderID, threadID, participantIDs} = message;
     let savePath, avatarPath;
+
     try {
-        if (args.some(e => e.toLowerCase() == '-a' || e.toLowerCase() == 'all')) {
-            let _listOf = args.some(e => e.toLowerCase() == '-g' || e.toLowerCase() == 'global') ? 'global' : 'local';
-            const allData = _listOf == 'global' ?
-                Array
-                    .from(global.data.users.values())
-                    .map(e => ({ userID: e.userID, exp: e.data?.exp || 1 })) :
-                (global.data.threads.get(String(threadID))?.info?.members) || [];
+        const targetID = type === 'message_reply'
+? messageReply.senderID
+: Object.keys(mentions).length> 0
+? Object.keys(mentions)[0]
+: senderID;
 
-            if (allData.length == 0) return;
+        const allData = (global.data.threads.get(String(threadID))?.info?.members) || [];
+        if (allData.length === 0 ||!allData.some(e => e.userID === targetID)) return;
 
-            const sortedData = allData
-                .filter(e => participantIDs.includes(e.userID))
-                .map(e => ({ userID: e.userID, exp: e.exp || (_listOf == 'global' ? 1 : 0) }))
-                .sort((a, b) => a.exp == b.exp ? a.userID.localeCompare(b.userID) : b.exp - a.exp);
-
-            const allData_withName = await Promise.all(sortedData.map(async e => {
-                const name = (await global.controllers.Users.getInfo(e.userID))?.name || e.userID;
-                return { ...e, name };
-            }));
-
-            const senderExp = allData_withName.find(e => e.userID == senderID)?.exp || 0;
-            const senderRank = allData_withName.findIndex(e => e.userID == senderID) + 1;
-
-            return message.reply(getLang(_listOf == 'global' ? "rank_all_global" : "rank_all_local", {
-                senderExp,
-                senderRank,
-                allData: (_listOf == 'global' ? allData_withName.slice(0, 20) : allData_withName).map((e, i) => `${i + 1}. ${e.name} (${e.userID}) - ${e.exp} exp`).join('\n')
-            }))
-        }
-
-
-        let targetID = type == 'message_reply' ? messageReply.senderID : Object.keys(mentions).length > 0 ? Object.keys(mentions)[0] : senderID;
-        let _listOf = args[0]?.toLowerCase();
-        _listOf = (_listOf == '-g' || _listOf == 'global') ? 'global' : (_listOf == '-l' || _listOf == 'local') ? 'local' : 'local';
-        const allData = _listOf == 'global' ?
-            Array
-                .from(global.data.users.values())
-                .map(e => ({ userID: e.userID, exp: e.data?.exp || 1 })) :
-            (global.data.threads.get(String(threadID))?.info?.members) || [];
-
-        if (allData.length == 0 || !allData.some(e => e.userID == targetID)) return;
         const targetData = await global.controllers.Users.get(targetID);
-        if (!targetData || !targetData.info || !targetData.info.thumbSrc) return;
+        if (!targetData ||!targetData.info ||!targetData.info.name) return;
+
+        const avatarUrl = await getAvatarUrl(targetID);
 
         const sortedData = allData
-            .filter(e => participantIDs.includes(e.userID))
-            .map(e => ({ userID: e.userID, exp: e.exp || (_listOf == 'global' ? 1 : 0) }))
-            .sort((a, b) => a.exp == b.exp ? a.userID.localeCompare(b.userID) : b.exp - a.exp);
+.filter(e => participantIDs.includes(e.userID))
+.map(e => ({ userID: e.userID, exp: e.exp || 0}))
+.sort((a, b) => a.exp === b.exp? a.userID.localeCompare(b.userID): b.exp - a.exp);
 
-        const rank = sortedData.findIndex(e => e.userID == targetID) + 1;
+        const rank = sortedData.findIndex(e => e.userID === targetID) + 1;
         const exp = sortedData[rank - 1].exp || 1;
         const level = global.expToLevel(exp);
 
@@ -163,15 +138,26 @@ async function onCall({ message, args, getLang }) {
         savePath = join(global.cachePath, `rank_${targetID}_${Date.now()}.png`);
         avatarPath = join(global.cachePath, `rank_avatar_${targetID}_${Date.now()}.jpg`);
 
-        await global.downloadFile(avatarPath, targetData.info.thumbSrc);
-        let result = await makeCard({ savePath, avatarPath, name: targetData.info.name, rank, exp: currentExp, level, expToNextLevel });
+        await global.downloadFile(avatarPath, avatarUrl);
+        const result = await makeCard({
+            savePath,
+            avatarPath,
+            name: targetData.info.name,
+            rank,
+            exp: currentExp,
+            level,
+            expToNextLevel
+});
 
-        if (!result) message.reply("Error");
-        else await message.reply({ attachment: global.reader(savePath) });
-    } catch (e) {
+        if (!result) {
+            message.reply(getLang("rank_error"));
+} else {
+            await message.reply({ attachment: global.reader(savePath)});
+}
+} catch (e) {
         console.error(e);
-        message.reply("Error");
-    }
+        message.reply(getLang("rank_error"));
+}
 
     cleanup(savePath, avatarPath);
 }
@@ -180,13 +166,13 @@ function cleanup(savePath, avatarPath) {
     try {
         if (global.isExists(savePath)) global.deleteFile(savePath);
         if (global.isExists(avatarPath)) global.deleteFile(avatarPath);
-    } catch (e) {
+} catch (e) {
         console.error(e);
-    }
+}
 }
 
 export default {
     config,
     langData,
     onCall
-}
+};
