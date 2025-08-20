@@ -118,7 +118,7 @@ const PREFIX = getThreadData.prefix || global.config.PREFIX;
     api.changeNickname(`○ ❴ ${PREFIX} ❵ ○   ${global.config.NAME || "مشمش"}`, threadID, botID);
 
     // ✅ إرسال رسالة "تم الاتصال" مع صورة botW.png
-    const imagePath = path.join(global.mainPath, "plugins/events/subcribeGifs/botW.png");
+    const imagePath = path.join(global.mainPath, "plugins/events/subcribeGifs/bot.png");
     let connectedMsg = {
       body: getLang("plugins.events.subcribe.connected", { PREFIX})
 };
