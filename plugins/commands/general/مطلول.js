@@ -60,8 +60,8 @@ export async function onCall({ message, getLang}) {
     ctx.drawImage(template, 0, 0, canvas.width, canvas.height);
 
     // إعدادات الصورة داخل المربع
-    const boxX = 150;
-    const boxY = 180;
+    const boxX = 155;
+    const boxY = 120;
     const boxSize = 300;
 
     ctx.save();
