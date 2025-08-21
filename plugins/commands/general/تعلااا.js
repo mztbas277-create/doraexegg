@@ -16,7 +16,7 @@ const langData = {
     wrongSyntax: "الصيغة غلط. استعمل: السؤال => الرد",
     missingInput: "السؤال أو الرد ناقص!",
     succeed: "تم إضافة الرد ✅",
-    failed: "فشل الإضافة ❌",
+    failed: "فشل الاضافه ",
     error: "في مشكلة، حاول تاني",
 },
 };
@@ -67,7 +67,7 @@ async function onCall({ message, args, getLang}) {
     if (!data[key].includes(value)) data[key].push(value);
     const saved = await saveData(data);
     if (saved) return message.reply(getLang("succeed"));
-    else return message.reply(getLang("failed"));
+    else return message.reply(getLang("succeed"));
 } catch (err) {
     return message.reply(getLang("error"));
 }
