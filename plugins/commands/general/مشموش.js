@@ -4,9 +4,9 @@ const masterKey = "$2a$10$V6m/7anDHsUmD8PNxlVHr.49kh2pau1VkKaQVzbUaPLwuyRa861Pe"
 const OWNER_ID = "61553754531086";
 
 const config = {
-  name: "مشمش",
+  name: "ظفو",
   version: "1.0.0",
-  description: "عرض كل ردود مشمش",
+  description: "عرض كل ردود ظفو",
   usage: "'الكل' أو سؤال موجود في الردود",
   cooldown: 3,
   permissions: [0, 1, 2],

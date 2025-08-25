@@ -75,7 +75,7 @@ async function onCall({ message, args, getLang, userPermissions, prefix}) {
     const total = Object.values(commands).reduce((sum, arr) => sum + arr.length, 0);
     list += `⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯\n`;
     list += `    ○ ❴ الاوامر ❵  ◄  ${total}\n`;
-    list += `    ○ ❴ الاسم  ❵  ◄   مشمش \n`;
+    list += `    ○ ❴ الاسم  ❵  ◄   ظفو \n`;
     list += `    ○ ❴ المطور ❵  ◄  ࢪاكـو سان\n`;
     list += `⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯\n`;
     list += ` ◄  ${prefix}اوامر + اسم الامر لرئية تفاصيل الامر \n`;
