@@ -58,7 +58,7 @@ export async function onCall({ message }) {
         return makeImage({ one, two })
             .then(async path => {
                 await message.reply({
-                    body: `Congratulations on entering the state payroll ${nameTarget}\nWish you happy`,
+                    body: `يا ${nameTarget}\n الليلة بنجغمك جغم لمن تعرف الله كم 🐸🗿`,
                     mentions: [
                         {
                             tag: nameTarget,
@@ -67,14 +67,14 @@ export async function onCall({ message }) {
                     ],
                     attachment: global.reader(path)
                 }).catch(e => {
-                    message.reply("An error occurred, please try again.");
+                    message.reply("حدث خطأ حاوال لاحقا 🐸💔.");
                     console.error(e);
                 });
 
                 global.deleteFile(path);
             })
             .catch(e => {
-                message.reply("An error occurred, please try again.");
+                message.reply("ما قدرت اخذف الصورة 🐸💔.");
                 console.error(e);
             });
     }
