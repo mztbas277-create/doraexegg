@@ -1,10 +1,13 @@
+import fs from "fs";
+import axios from "axios";
+
 const config = {
   name: "اوامر",
   _name: {
     "ar_SY": "الاوامر"
 },
   aliases: ["cmds", "مساعدة"],
-  version: "1.0.3",
+  version: "1.0.4",
   description: "عرض جميع الأوامر أو تفاصيل أمر معين",
   usage: "[اسم الأمر] (اختياري)",
   credits: "XaviaTeam"
@@ -36,6 +39,20 @@ function getCommandName(commandName) {
   return null;
 }
 
+async function ensureImageExists() {
+  const folderPath = "./cache";
+  const filePath = `${folderPath}/botW.jpg`;
+  const imageUrl = "https://i.postimg.cc/sDwzm8XB/Messenger-creation-1069310175245840.jpg";
+
+  if (!fs.existsSync(folderPath)) fs.mkdirSync(folderPath);
+  if (!fs.existsSync(filePath)) {
+    const { data} = await axios.get(imageUrl, { responseType: "arraybuffer"});
+    fs.writeFileSync(filePath, Buffer.from(data));
+}
+
+  return fs.createReadStream(filePath);
+}
+
 async function onCall({ message, args, getLang, userPermissions, prefix}) {
   const { commandsConfig} = global.plugins;
   const commandName = args[0]?.toLowerCase();
@@ -59,16 +76,15 @@ async function onCall({ message, args, getLang, userPermissions, prefix}) {
       commands[category].push(displayName);
 }
 
-    let list = "※══════『قائمة الاوامر』══════※\n\n";
+  let list = "※═════『قائمة الاوامر』═════※\n\n";
+
 
     for (const [category, cmds] of Object.entries(commands)) {
       list += ` □  ❴ ${category} ❵    \n\n`;
-
       for (let i = 0; i < cmds.length; i += 4) {
         const row = cmds.slice(i, i + 4).map(cmd => ` ◎ ${cmd}`).join("  ");
         list += `${row}\n⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯\n`;
 }
-
       list += "\n";
 }
 
@@ -76,40 +92,40 @@ async function onCall({ message, args, getLang, userPermissions, prefix}) {
     list += `⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯\n`;
     list += `    ○ ❴ الاوامر ❵  ◄  ${total}\n`;
     list += `    ○ ❴ الاسم  ❵  ◄   ظفو \n`;
-    list += `    ○ ❴ المطور ❵  ◄  ࢪاكـو سان\n`;
+    list += `    ○ ❴ المطور ❵  ◄  راكو سان \n`;
     list += `⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯\n`;
     list += ` ◄  ${prefix}اوامر + اسم الامر لرئية تفاصيل الامر \n`;
 
-    message.reply(getLang("help.list", { list}));
-} else {
-    const command = commandsConfig.get(getCommandName(commandName));
-    if (!command) return message.reply(getLang("help.commandNotExists", { command: commandName}));
-
-    const isHidden =!!command.isHidden;
-    const isUserValid =!command.isAbsolute || global.config?.ABSOLUTES.includes(message.senderID);
-    const isPermissionValid = command.permissions?.some(p => userPermissions.includes(p));
-
-    if (isHidden ||!isUserValid ||!isPermissionValid) {
-      return message.reply(getLang("help.commandNotExists", { command: commandName}));
+    const imageStream = await ensureImageExists();
+    return message.reply({ body: getLang("help.list", { list}), attachment: imageStream});
 }
 
-    let category = command.category || "GENERAL";
-    if (langData[language][category.toUpperCase()]) {
-      category = langData[language][category.toUpperCase()];
+  const command = commandsConfig.get(getCommandName(commandName));
+  if (!command) return message.reply(getLang("help.commandNotExists", { command: commandName}));
+
+  const isHidden =!!command.isHidden;
+  const isUserValid =!command.isAbsolute || global.config?.ABSOLUTES.includes(message.senderID);
+  const isPermissionValid = command.permissions?.some(p => userPermissions.includes(p));
+if (isHidden ||!isUserValid ||!isPermissionValid) {
+    return message.reply(getLang("help.commandNotExists", { command: commandName}));
 }
 
-    message.reply(getLang("help.commandDetails", {
-      name: command.name,
-      aliases: command.aliases?.join(", ") || "لا يوجد",
-      version: command.version || "1.0.0",
-      description: command.description || "لا يوجد وصف",
-      usage: `${prefix}${commandName} ${command.usage || ""}`,
-      permissions: command.permissions.map(p => getLang(String(p))).join(", "),
-      category,
-      cooldown: command.cooldown || 3,
-      credits: command.credits || "غير معروف"
+  let category = command.category || "GENERAL";
+  if (langData[language][category.toUpperCase()]) {
+    category = langData[language][category.toUpperCase()];
+}
+
+  message.reply(getLang("help.commandDetails", {
+    name: command.name,
+    aliases: command.aliases?.join(", ") || "لا يوجد",
+    version: command.version || "1.0.0",
+    description: command.description || "لا يوجد وصف",
+    usage: `${prefix}${commandName} ${command.usage || ""}`,
+    permissions: command.permissions.map(p => getLang(String(p))).join(", "),
+    category,
+    cooldown: command.cooldown || 3,
+    credits: command.credits || "غير معروف"
 }).replace(/^ +/gm, ''));
-}
 }
 
 export default {

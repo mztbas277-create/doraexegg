@@ -1,5 +1,5 @@
 const config = {
-    name: "للا-يغتفر,
+    name: "للا-يغتفر", 
     description: "unforgivable meme maker",
     usage: "[text]",
     cooldown: 3,

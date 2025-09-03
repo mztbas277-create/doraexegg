@@ -1,16 +1,15 @@
 const binId = "68b0fd75ae596e708fda82c1"; // نفس Bin ID اللي استخدمناه
 const masterKey = "$2a$10$V6m/7anDHsUmD8PNxlVHr.49kh2pau1VkKaQVzbUaPLwuyRa861Pe";
-
 const OWNER_ID = "61553754531086";
 
 const config = {
   name: "ظفو",
   version: "1.0.0",
-  description: "عرض كل ردود ظفو",
+  description: "عرض كل ردود مشمش",
   usage: "'الكل' أو سؤال موجود في الردود",
   cooldown: 3,
   permissions: [0, 1, 2],
-  credits: "TobySanchez",
+  credits: "Rako San",
 };
 
 const langData = {
@@ -41,14 +40,23 @@ function getRandom(arr) {
   return arr[Math.floor(Math.random() * arr.length)];
 }
 
+function normalizeText(text) {
+  return text
+.replace(/[أإآ]/g, 'ا')
+.replace(/ة/g, 'ه')
+.replace(/ى/g, 'ي')
+.replace(/[؟?!.,،؛]/g, '')
+.replace(/\s+/g, ' ')
+.trim()
+.toLowerCase();
+}
+
 async function onCall({ message, args, getLang}) {
   const input = args.join(" ").trim();
   const data = await loadData();
 
-  // لو ما في كتابة
   if (!input) return message.reply(getLang("missingInput"));
 
-  // أمر الكل - فقط للمالك
   if (input === "الكل") {
     if (message.senderID!== OWNER_ID) {
       return message.reply(getLang("notOwner"));
@@ -69,9 +77,15 @@ async function onCall({ message, args, getLang}) {
     return message.reply(reply.length> 1999? reply.slice(0, 1999): reply);
 }
 
-  // الرد على سؤال عادي
-  if (!data[input]) return message.reply(getLang("noResult"));
-  return message.reply(getRandom(data[input]));
+  const normalizedInput = normalizeText(input);
+  let matchedKey = Object.keys(data).find(key => normalizeText(key) === normalizedInput);
+
+  if (!matchedKey) {
+    matchedKey = Object.keys(data).find(key => normalizeText(key).includes(normalizedInput));
+}
+
+  if (!matchedKey) return message.reply(getLang("noResult"));
+  return message.reply(getRandom(data[matchedKey]));
 }
 
 export default {
