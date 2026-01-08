@@ -1,7 +1,7 @@
 import fs from "fs";
 import axios from "axios";
 
-const imageURL = "https://i.postimg.cc/sDwzm8XB/Messenger-creation-1069310175245840.jpg";
+const imageURL = "https://i.ibb.co/PJK2n1N/Messenger-creation-2-DBBF1-E2-3696-464-A-BA72-D62-B034-DA8-F1.jpg";
 const imagePath = "./cache/botW.jpg";
 
 async function ensureImageExists() {
@@ -16,15 +16,14 @@ async function ensureImageExists() {
 export default async function ({ message, prefix}) {
   const imageStream = await ensureImageExists();
 
-  const msg = `❀━━━━〖 ظفو 〗━━━━❀
+  const msg = `❀━━━━〖 ساكورا 〗━━━━❀
 معلومات البوت ✨
-════════❍════════
-  اسم البوت: ظفو
-════════❍════════
-  اسم المطور: صلاح الدين
-════════❍════════
-  رابط حساب المطور: https://www.facebook.com/Rako.San.r.s
-════════❍════════
+ ساكورا ❍ اسم البوت
+  
+وسكي ❍ المطور 
+  
+رابطابط حساب المطور: https://www.facebook.com/profile.php?id=61582847128354
+❍
   ${prefix}اوامر لرؤية قائمة الأوامر.`;
 
   message.reply({ body: msg, attachment: imageStream});
